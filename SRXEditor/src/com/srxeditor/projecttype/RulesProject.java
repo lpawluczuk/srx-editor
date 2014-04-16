@@ -1,8 +1,11 @@
 package com.srxeditor.projecttype;
 
+import com.srxeditor.SRXRunner;
 import java.awt.Image;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Enumeration;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -13,8 +16,10 @@ import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.ui.LogicalViewProvider;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
@@ -23,6 +28,7 @@ import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
+import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
 
@@ -75,17 +81,60 @@ public class RulesProject implements Project {
 
         @Override
         public String[] getSupportedActions() {
-            return new String[0];
+            return new String[]{
+                ActionProvider.COMMAND_RUN
+            };
         }
 
         @Override
         public void invokeAction(String string, Lookup lookup) throws IllegalArgumentException {
-            //do nothing
+            int idx = Arrays.asList(getSupportedActions()).indexOf(string);
+            switch (idx) {
+                case 0: //run
+                    // TODO thread?
+
+                    FileObject rules = null;
+
+                    System.out.println("Rules");
+                    for (FileObject fileObject : getProjectDirectory().getChildren()) {
+                        if (fileObject.getExt().equals("xml")) {
+                            rules = fileObject;
+                            break;
+                        }
+                    }
+
+                    SRXRunner srxr = new SRXRunner();
+                    srxr.run(getLookup().lookup(RulesProject.class).getDocumentsFolder(false).getChildren(), rules);
+//                    final RendererService ren = (RendererService) getLookup().lookup(RendererService.class);
+//                    RequestProcessor.getDefault().post(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            FileObject image = ren.render();
+//                            //If we succeeded, try to open the image
+//                            if (image != null) {
+//                                DataObject dob;
+//                                try {
+//                                    dob = DataObject.find(image);
+//                                    OpenCookie open = (OpenCookie) dob.getNodeDelegate().getLookup().lookup(OpenCookie.class);
+//                                    if (open != null) {
+//                                        open.open();
+//                                    }
+//                                } catch (DataObjectNotFoundException ex) {
+//                                    Exceptions.printStackTrace(ex);
+//                                }
+//                            }
+//                        }
+//                    });
+                    break;
+                default:
+                    throw new IllegalArgumentException(string);
+            }
         }
 
         @Override
         public boolean isActionEnabled(String string, Lookup lookup) throws IllegalArgumentException {
-            return false;
+            // TODO check
+            return true;
         }
 
     }

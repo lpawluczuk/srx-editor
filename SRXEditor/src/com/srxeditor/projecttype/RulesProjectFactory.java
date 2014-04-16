@@ -27,7 +27,14 @@ public class RulesProjectFactory implements ProjectFactory {
 
     @Override
     public void saveProject(final Project project) throws IOException, ClassCastException {
-        // leave unimplemented for the moment
+        FileObject projectRoot = project.getProjectDirectory();
+        if (projectRoot.getFileObject(PROJECT_FILE) == null) {
+            throw new IOException("Project dir " + projectRoot.getPath() + " deleted,"
+                    + " cannot save project");
+        }
+
+        //Force creation of the scenes/ dir if it was deleted
+        project.getLookup().lookup(RulesProject.class).getDocumentsFolder(true);
     }
 
 }

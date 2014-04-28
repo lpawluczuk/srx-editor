@@ -1,11 +1,12 @@
 package com.srxeditor.projecttype;
 
-import com.srxeditor.SRXRunner;
+import com.srxeditor.api.SRXRunner;
 import java.awt.Image;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -16,10 +17,8 @@ import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.ui.LogicalViewProvider;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;
-import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
-import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
@@ -28,17 +27,19 @@ import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
-import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
 
 public class RulesProject implements Project {
 
     public static final String DOCUMENTS_DIR = "documents";
+    public static final String RULES = "srx-rules.xml";
 
     private final FileObject projectDir;
     private final ProjectState state;
     private Lookup lkp;
+
+    private FileObject[] activeDocuments;
 
     public RulesProject(FileObject dir, ProjectState state) {
         this.projectDir = dir;
@@ -50,9 +51,35 @@ public class RulesProject implements Project {
         return projectDir;
     }
 
-    FileObject getDocumentsFolder(boolean create) {
+    public FileObject getDocumentsFolder(boolean create) {
         FileObject result
                 = projectDir.getFileObject(DOCUMENTS_DIR);
+
+        if (result == null && create) {
+            try {
+                result = projectDir.createFolder(DOCUMENTS_DIR);
+            } catch (IOException ioe) {
+                Exceptions.printStackTrace(ioe);
+            }
+        }
+        return result;
+    }
+
+    public void setActiveDocuments(FileObject[] activeDocuments) {
+        this.activeDocuments = activeDocuments;
+    }
+
+    public FileObject[] getActiveDocuments() {
+        if (activeDocuments == null) {
+            return getDocumentsFolder(false).getChildren();
+        }
+
+        return activeDocuments;
+    }
+
+    public FileObject getRules(boolean create) {
+        FileObject result
+                = projectDir.getFileObject(RULES);
 
         if (result == null && create) {
             try {
@@ -82,30 +109,21 @@ public class RulesProject implements Project {
         @Override
         public String[] getSupportedActions() {
             return new String[]{
-                ActionProvider.COMMAND_RUN
-            };
+                ActionProvider.COMMAND_RUN,};
         }
 
         @Override
         public void invokeAction(String string, Lookup lookup) throws IllegalArgumentException {
-            int idx = Arrays.asList(getSupportedActions()).indexOf(string);
-            switch (idx) {
-                case 0: //run
-                    // TODO thread?
+            try {
+                int idx = Arrays.asList(getSupportedActions()).indexOf(string);
+                switch (idx) {
+                    case 0: //run
 
-                    FileObject rules = null;
+                        FileObject rules = getLookup().lookup(RulesProject.class).getRules(false);
+                        FileObject[] documents = getLookup().lookup(RulesProject.class).getActiveDocuments();
 
-                    System.out.println("Rules");
-                    for (FileObject fileObject : getProjectDirectory().getChildren()) {
-                        if (fileObject.getExt().equals("xml")) {
-                            rules = fileObject;
-                            break;
-                        }
-                    }
-
-                    SRXRunner srxr = new SRXRunner();
-                    srxr.run(getLookup().lookup(RulesProject.class).getDocumentsFolder(false).getChildren(), rules);
-//                    final RendererService ren = (RendererService) getLookup().lookup(RendererService.class);
+                        SRXRunner srxr = new SRXRunner("en", documents, rules);
+                        srxr.run();
 //                    RequestProcessor.getDefault().post(new Runnable() {
 //                        @Override
 //                        public void run() {
@@ -125,9 +143,12 @@ public class RulesProject implements Project {
 //                            }
 //                        }
 //                    });
-                    break;
-                default:
-                    throw new IllegalArgumentException(string);
+                        break;
+                    default:
+                        throw new IllegalArgumentException(string);
+                }
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
             }
         }
 
@@ -269,7 +290,8 @@ public class RulesProject implements Project {
                     CommonProjectActions.newFileAction(),
                     CommonProjectActions.copyProjectAction(),
                     CommonProjectActions.deleteProjectAction(),
-                    CommonProjectActions.closeProjectAction()
+                    CommonProjectActions.closeProjectAction(),
+                    CommonProjectActions.setAsMainProjectAction()
                 };
             }
 

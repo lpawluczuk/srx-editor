@@ -33,7 +33,7 @@ public class RulesProjectFactory implements ProjectFactory {
                     + " cannot save project");
         }
 
-        //Force creation of the scenes/ dir if it was deleted
+        //Force creation of the documents/ dir if it was deleted
         project.getLookup().lookup(RulesProject.class).getDocumentsFolder(true);
     }
 

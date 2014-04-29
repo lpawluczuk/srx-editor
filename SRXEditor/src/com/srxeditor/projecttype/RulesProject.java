@@ -15,10 +15,8 @@ import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.ui.LogicalViewProvider;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;
-import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
-import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
@@ -71,11 +69,7 @@ public class RulesProject implements Project {
     }
 
     public FileObject[] getActiveDocuments() {
-        if (activeDocuments == null) {
-            return getDocumentsFolder(false).getChildren();
-        }
-
-        return activeDocuments;
+        return activeDocuments == null ? getDocumentsFolder(false).getChildren() : activeDocuments;
     }
 
     public FileObject getRules(boolean create) {
@@ -126,7 +120,7 @@ public class RulesProject implements Project {
                                 FileObject rules = getLookup().lookup(RulesProject.class).getRules(false);
                                 FileObject[] documents = getLookup().lookup(RulesProject.class).getActiveDocuments();
 
-                                SRXRunner srxr = new SRXRunner("en", documents, rules);
+                                SRXRunner srxr = new SRXRunner(documents, rules);
                                 srxr.run();
                             } catch (IOException ex) {
                                 Exceptions.printStackTrace(ex);

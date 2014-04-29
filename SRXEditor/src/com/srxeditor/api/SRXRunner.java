@@ -22,15 +22,13 @@ public class SRXRunner {
     public static final String DEFAULT_BEGIN_SEGMENT = "";
     public static final String DEFAULT_END_SEGMENT = EOLN;
 
-    private final String language;
     private final FileObject[] documents;
     private final InputOutput inputOutput;
     private final SrxDocument srxDocument;
 
-    public SRXRunner(String language, FileObject[] documents, FileObject rules) throws IOException {
+    public SRXRunner(FileObject[] documents, FileObject rules) throws IOException {
         this.inputOutput = IOProvider.getDefault().getIO(OUTPUT_WINDOW_NAME, false);
         this.inputOutput.getOut().reset();
-        this.language = language;
         this.documents = documents;
 
         Reader srxRulesReader = Util.getReader(Util.getFileInputStream(rules.getPath()));
@@ -50,9 +48,11 @@ public class SRXRunner {
     }
 
     private void runForSingleFile(FileObject document) throws IOException {
+        inputOutput.getOut().println("#####################################");
         inputOutput.getOut().println("Running file: " + document.getName());
         inputOutput.getOut().println();
-        performSegment(new FastTextIterator(srxDocument, language, document.asText(), new HashMap<String, Object>()));
+        performSegment(new FastTextIterator(srxDocument, "*", document.asText(), new HashMap<String, Object>()));
+
         inputOutput.getOut().println("Running file done.");
         inputOutput.getOut().println();
     }

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
@@ -50,7 +51,7 @@ import org.openide.util.NbBundle.Messages;
     "CTL_DocumentsTopComponent=Documents Window",
     "HINT_DocumentsTopComponent=This is a Documents window"
 })
-public final class DocumentsTopComponent extends TopComponent {
+public final class DocumentsTopComponent extends TopComponent implements FileChangeListener {
 
     private Map<FileObject, Boolean> filesChecks = new HashMap<FileObject, Boolean>();
     private final Project project;
@@ -77,41 +78,13 @@ public final class DocumentsTopComponent extends TopComponent {
         }
 
         filesChecks = new HashMap<FileObject, Boolean>();
-
-        setLayout(new java.awt.GridLayout(10, 1));
-
         FileObject documentFolder = project.getLookup().lookup(RulesProject.class).getDocumentsFolder(false);
-        documentFolder.addFileChangeListener(new FileChangeListener() {
-
-            @Override
-            public void fileFolderCreated(FileEvent fe) {
-            }
-
-            @Override
-            public void fileDataCreated(FileEvent fe) {
-                init();
-            }
-
-            @Override
-            public void fileChanged(FileEvent fe) {
-            }
-
-            @Override
-            public void fileDeleted(FileEvent fe) {
-                init();
-            }
-
-            @Override
-            public void fileRenamed(FileRenameEvent fe) {
-                init();
-            }
-
-            @Override
-            public void fileAttributeChanged(FileAttributeEvent fe) {
-            }
-        });
+        documentFolder.addFileChangeListener(this);
 
         FileObject[] documents = documentFolder.getChildren();
+
+//        setLayout(new java.awt.GridLayout((documents.length + 2) > 10 ? (documents.length + 2) : 10, 1));
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         for (FileObject document : documents) {
 
@@ -197,4 +170,30 @@ public final class DocumentsTopComponent extends TopComponent {
         // TODO read your settings according to their version
     }
 
+    @Override
+    public void fileFolderCreated(FileEvent fe) {
+    }
+
+    @Override
+    public void fileDataCreated(FileEvent fe) {
+        init();
+    }
+
+    @Override
+    public void fileChanged(FileEvent fe) {
+    }
+
+    @Override
+    public void fileDeleted(FileEvent fe) {
+        init();
+    }
+
+    @Override
+    public void fileRenamed(FileRenameEvent fe) {
+        init();
+    }
+
+    @Override
+    public void fileAttributeChanged(FileAttributeEvent fe) {
+    }
 }

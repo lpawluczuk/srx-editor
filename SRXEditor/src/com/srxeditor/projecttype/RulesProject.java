@@ -5,8 +5,6 @@ import java.awt.Image;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -17,8 +15,10 @@ import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.ui.LogicalViewProvider;
 import org.netbeans.spi.project.ui.support.CommonProjectActions;
+import org.openide.cookies.OpenCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataFolder;
+import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
@@ -27,6 +27,7 @@ import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
+import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
 
@@ -114,41 +115,27 @@ public class RulesProject implements Project {
 
         @Override
         public void invokeAction(String string, Lookup lookup) throws IllegalArgumentException {
-            try {
-                int idx = Arrays.asList(getSupportedActions()).indexOf(string);
-                switch (idx) {
-                    case 0: //run
+            int idx = Arrays.asList(getSupportedActions()).indexOf(string);
+            switch (idx) {
+                case 0: //run
 
-                        FileObject rules = getLookup().lookup(RulesProject.class).getRules(false);
-                        FileObject[] documents = getLookup().lookup(RulesProject.class).getActiveDocuments();
+                    RequestProcessor.getDefault().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                FileObject rules = getLookup().lookup(RulesProject.class).getRules(false);
+                                FileObject[] documents = getLookup().lookup(RulesProject.class).getActiveDocuments();
 
-                        SRXRunner srxr = new SRXRunner("en", documents, rules);
-                        srxr.run();
-//                    RequestProcessor.getDefault().post(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            FileObject image = ren.render();
-//                            //If we succeeded, try to open the image
-//                            if (image != null) {
-//                                DataObject dob;
-//                                try {
-//                                    dob = DataObject.find(image);
-//                                    OpenCookie open = (OpenCookie) dob.getNodeDelegate().getLookup().lookup(OpenCookie.class);
-//                                    if (open != null) {
-//                                        open.open();
-//                                    }
-//                                } catch (DataObjectNotFoundException ex) {
-//                                    Exceptions.printStackTrace(ex);
-//                                }
-//                            }
-//                        }
-//                    });
-                        break;
-                    default:
-                        throw new IllegalArgumentException(string);
-                }
-            } catch (IOException ex) {
-                Exceptions.printStackTrace(ex);
+                                SRXRunner srxr = new SRXRunner("en", documents, rules);
+                                srxr.run();
+                            } catch (IOException ex) {
+                                Exceptions.printStackTrace(ex);
+                            }
+                        }
+                    });
+                    break;
+                default:
+                    throw new IllegalArgumentException(string);
             }
         }
 
@@ -291,8 +278,7 @@ public class RulesProject implements Project {
                     CommonProjectActions.copyProjectAction(),
                     CommonProjectActions.deleteProjectAction(),
                     CommonProjectActions.closeProjectAction(),
-                    CommonProjectActions.setAsMainProjectAction()
-                };
+                    CommonProjectActions.setAsMainProjectAction(),};
             }
 
             @Override
